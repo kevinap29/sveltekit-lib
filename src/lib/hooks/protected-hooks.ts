@@ -40,12 +40,10 @@ import type { AuthenticationHeader, ProtectedAndFallbackEndpoint } from '$lib/ty
 export class ProtectedHooks {
 	public secret: string;
 	public endpoints: ProtectedAndFallbackEndpoint[];
-	public isProduction: boolean
 
-	constructor(secret: string, endpoints: ProtectedAndFallbackEndpoint[], isProduction: boolean) {
+	constructor(secret: string, endpoints: ProtectedAndFallbackEndpoint[]) {
 		this.secret = secret;
 		this.endpoints = endpoints;
-		this.isProduction = isProduction;
 	}
 
     /**
@@ -75,7 +73,7 @@ export class ProtectedHooks {
 					);
 				}
 	
-				if (event.url.pathname.startsWith(endpoint.protected) && this.isProduction && !event.locals.user) {
+				if (event.url.pathname.startsWith(endpoint.protected) && isProduction && !event.locals.user) {
 					const auth_header = event.request.headers.get(
 						'Authorization'
 					) as AuthenticationHeader | null;

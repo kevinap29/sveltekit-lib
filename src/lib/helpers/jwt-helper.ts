@@ -1,5 +1,5 @@
 import type { ExtendJWTPayload, JWTExpiresIn } from '$lib/types/index.js';
-import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 
 /**
  * A helper class for generating and verifying JSON Web Tokens (JWT) using the HS256 algorithm.
@@ -18,14 +18,14 @@ export class JWTHelper {
 	 * Generates a signed JSON Web Token (JWT) using the provided secret and payload.
 	 *
 	 * @param secret - The secret key used to sign the JWT. Must not be empty.
-	 * @param payload - The payload to include in the JWT. Should conform to `JWTPayload` and `ExtendJWTPayload`.
+	 * @param payload - The payload to include in the JWT. Should conform to `ExtendJWTPayload`.
 	 * @param expired - Optional expiration time for the JWT (e.g., '1h', '2d', or a numeric value in seconds).
 	 * @returns A promise that resolves to the signed JWT string.
 	 * @throws If the secret is an empty string.
 	 */
 	public static async generate(
 		secret: string,
-		payload: JWTPayload & ExtendJWTPayload,
+		payload: ExtendJWTPayload,
 		expired?: JWTExpiresIn
 	) {
 		if (secret === '') {

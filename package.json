@@ -1,6 +1,6 @@
 {
 	"name": "@kevinap29/sveltekit-lib",
-	"version": "0.0.4",
+	"version": "0.1.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -68,7 +68,7 @@
 		"vitest-browser-svelte": "^0.1.0"
 	},
 	"keywords": [
-		"svelte"
+		"svelte", "library","helpers","sveltekit"
 	],
 	"dependencies": {
 		"jose": "^6.0.12"

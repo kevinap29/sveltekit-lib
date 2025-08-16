@@ -5,7 +5,10 @@ import type { ExtendJWTPayload } from '$lib/types/index.ts';
 
 declare global {
 	namespace App {
-		// interface Error {}
+		interface Error {
+			status: number
+			message: string
+		}
 		interface Locals {
 			user?: ExtendJWTPayload;
 		}

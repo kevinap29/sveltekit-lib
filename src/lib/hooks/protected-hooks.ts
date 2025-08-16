@@ -1,7 +1,7 @@
-import { type Handle, redirect } from '@sveltejs/kit';
+import { type Handle, redirect, error } from '@sveltejs/kit';
 import { JWTHelper } from '$lib/helpers/index.js';
 import { DEV } from 'esm-env';
-import type { AuthenticationHeader, ExtendJWTPayload, ProtectedAndFallbackEndpoint } from '$lib/types/index.js';
+import type { AuthenticationHeader, ProtectedAndFallbackEndpoint } from '$lib/types/index.js';
 
 /**
  * Provides middleware for protecting SvelteKit endpoints using JWT authentication.
@@ -65,46 +65,55 @@ export class ProtectedHooks {
 		const isProduction = !event.locals.user && !DEV;
 
 		for (const endpoint of this.endpoints) {
-			if (!endpoint.fallback.startsWith('/') || !endpoint.protected.startsWith('/')) {
-				throw new Error(
-					`Invalid endpoint format: ${endpoint.fallback} or ${endpoint.protected}. Endpoints must start with '/'`
+			try {
+				if (!endpoint.fallback.startsWith('/') || !endpoint.protected.startsWith('/')) {
+					throw redirect(
+						303,
+						`${event.url.origin}${endpoint.fallback}`
+					);
+				}
+	
+				if (event.url.pathname.startsWith(endpoint.protected) && isProduction && !event.locals.user) {
+					const auth_header = event.request.headers.get(
+						'Authorization'
+					) as AuthenticationHeader | null;
+	
+					if (!auth_header)
+						throw redirect(
+							303,
+							`${event.url.origin}${endpoint.fallback}`
+						);
+	
+					if (!auth_header.startsWith('Bearer '))
+						throw redirect(
+							303,
+							`${event.url.origin}${endpoint.fallback}`
+						);
+	
+					const token = auth_header.split(' ').at(1);
+	
+					if (!token) {
+						throw redirect(
+							303,
+							`${event.url.origin}${endpoint.fallback}`
+						);
+					}
+	
+					const verify = await JWTHelper.verify(token, this.secret);
+					
+					if (!verify.sub)
+						throw redirect(
+							303,
+							`${event.url.origin}${endpoint.fallback}`
+						);
+	
+					event.locals.user = { ...verify };
+				}
+			} catch {
+				throw redirect(
+					303,
+					`${event.url.origin}${endpoint.fallback}`
 				);
-			}
-
-			if (event.url.pathname.startsWith(endpoint.protected) && isProduction) {
-				const auth_header = event.request.headers.get(
-					'Authorization'
-				) as AuthenticationHeader | null;
-
-				if (!auth_header)
-					throw redirect(
-						303,
-						`${event.url.origin}${endpoint.fallback}`
-					);
-
-				if (!auth_header.startsWith('Bearer '))
-					throw redirect(
-						303,
-						`${event.url.origin}${endpoint.fallback}`
-					);
-
-				const token = auth_header.split(' ').at(1);
-
-				if (!token)
-					throw redirect(
-						303,
-						`${event.url.origin}${endpoint.fallback}`
-					);
-
-				const verify = await JWTHelper.verify(token, this.secret);
-
-				if (!verify.sub)
-					throw redirect(
-						303,
-						`${event.url.origin}${endpoint.fallback}`
-					);
-
-				event.locals.user = { ...verify };
 			}
 		}
 

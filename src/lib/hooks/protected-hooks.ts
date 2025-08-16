@@ -1,4 +1,4 @@
-import { type Handle, redirect, error } from '@sveltejs/kit';
+import { type Handle, redirect } from '@sveltejs/kit';
 import { JWTHelper } from '$lib/helpers/index.js';
 import { DEV } from 'esm-env';
 import type { AuthenticationHeader, ProtectedAndFallbackEndpoint } from '$lib/types/index.js';
@@ -64,7 +64,7 @@ export class ProtectedHooks {
      * @throws Redirect if authentication fails for protected endpoints.
      */
 	public handle: Handle = async ({ event, resolve }) => {
-		//const isProduction = !event.locals.user && !DEV;
+		const isProduction = !event.locals.user && !DEV;
 
 		for (const endpoint of this.endpoints) {
 			try {
@@ -103,7 +103,7 @@ export class ProtectedHooks {
 	
 					const verify = await JWTHelper.verify(token, this.secret);
 					
-					if (!verify.sub)
+					if (!verify.email)
 						throw redirect(
 							303,
 							`${event.url.origin}${endpoint.fallback}`

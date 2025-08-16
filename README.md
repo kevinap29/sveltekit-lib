@@ -1,63 +1,178 @@
-# @kevinap29/sveltekit-lib
+# SvelteKit Lib Documentation
 
-A SvelteKit library for JWT authentication, protected hooks, and utility helpers.  
-Preview and showcase your package with SvelteKit.
+A utility library for SvelteKit projects providing JWT helpers, request hooks, and type definitions.
 
-## Installation
+## 📦 Installation
 
-```sh
+```bash
 npm install @kevinap29/sveltekit-lib
 ```
 
-## Features
+or using pnpm:
 
-- JWT authentication helpers ([`JWTHelper`](src/lib/helpers/jwt-helper.ts))
-- SvelteKit endpoint protection ([`ProtectedHooks`](src/lib/hooks/protected-hooks.ts))
-- Type definitions for JWT and hooks ([`types`](src/lib/types/index.ts))
-
-## Usage
-
-### JWT Helper
-
-```ts
-import { JWTHelper } from '@kevinap29/sveltekit-lib';
-
-const token = await JWTHelper.generate('my-secret', { role: 'admin', email: 'user@example.com' }, '1h');
-const payload = await JWTHelper.verify(token, 'my-secret');
+```bash
+pnpm add @kevinap29/sveltekit-lib
 ```
 
-### Protected SvelteKit Endpoints
+## 🚀 Usage
+
+Import modules from the package:
 
 ```ts
-import { ProtectedHooks } from '@kevinap29/sveltekit-lib';
-
-const protectedHooks = new ProtectedHooks('my-secret', [
-  { protected: '/admin', fallback: '/login' }
-]);
-
-export const handle = protectedHooks.handle;
+import { verifyToken, signToken } from "@kevinap29/sveltekit-lib/helpers";
+import { protectedHandle } from "@kevinap29/sveltekit-lib/hooks";
+import type { JwtPayload } from "@kevinap29/sveltekit-lib/types";
 ```
 
-Add to your `src/app.d.ts`:
+---
+
+## 📚 API Reference
+
+### 1. Helpers (`@kevinap29/sveltekit-lib/helpers`)
+
+#### `signToken(payload: object, secret: string, options?: { expiresIn?: string | number }): string`
+
+Signs a payload and returns a JWT.
+
+**Parameters:**
+
+- `payload` – The object to sign.
+- `secret` – Secret key for signing.
+- `options.expiresIn` – Expiration time (e.g., `"1h"`, `3600`).
+
+**Returns:** A signed JWT string.
+
+**Example:**
 
 ```ts
-import type { ExtendJWTPayload } from '@kevinap29/sveltekit-lib';
+import { signToken } from "@kevinap29/sveltekit-lib/helpers";
 
-declare global {
-  namespace App {
-    interface Locals {
-      user?: ExtendJWTPayload;
-    }
-  }
+const token = signToken({ userId: 123 }, "my-secret", { expiresIn: "1h" });
+console.log(token);
+```
+
+---
+
+#### `verifyToken<T = object>(token: string, secret: string): T`
+
+Verifies a JWT and returns the decoded payload.
+
+**Parameters:**
+
+- `token` – The JWT string.
+- `secret` – The secret key used for verification.
+
+**Returns:** Decoded payload as type `T`.
+
+**Example:**
+
+```ts
+import { verifyToken } from "@kevinap29/sveltekit-lib/helpers";
+
+try {
+  const decoded = verifyToken<{ userId: number }>(token, "my-secret");
+  console.log(decoded.userId);
+} catch (err) {
+  console.error("Invalid token");
 }
 ```
 
-## Development
+---
 
-- Run dev server: `npm run dev`
-- Build: `npm run build`
-- Test: `npm run test`
+### 2. Hooks (`@kevinap29/sveltekit-lib/hooks`)
 
-## License
+#### `protectedHandle`
 
-MIT
+A SvelteKit `handle` hook that protects routes by requiring a valid JWT.
+
+**Usage in **``**:**
+
+```ts
+import { protectedHandle } from "@kevinap29/sveltekit-lib/hooks";
+
+export const handle = protectedHandle({
+  secret: "my-secret",
+  publicRoutes: ["/login", "/register"]
+});
+```
+
+**Options:**
+
+- `secret` – Secret key used for token verification.
+- `publicRoutes` – Array of paths that don’t require authentication.
+
+---
+
+### 3. Types (`@kevinap29/sveltekit-lib/types`)
+
+#### `JwtPayload`
+
+Represents the structure of a decoded JWT.
+
+```ts
+import type { JwtPayload } from "@kevinap29/sveltekit-lib/types";
+
+const payload: JwtPayload = {
+  userId: 123,
+  iat: 1610000000,
+  exp: 1610003600
+};
+```
+
+#### `HookOptions`
+
+Configuration options for `protectedHandle`.
+
+```ts
+import type { HookOptions } from "@kevinap29/sveltekit-lib/types";
+
+const options: HookOptions = {
+  secret: "my-secret",
+  publicRoutes: ["/auth/login"]
+};
+```
+
+---
+
+## 📝 Example Project Setup
+
+**hooks.server.ts**
+
+```ts
+import { protectedHandle } from "@kevinap29/sveltekit-lib/hooks";
+
+export const handle = protectedHandle({
+  secret: process.env.JWT_SECRET!,
+  publicRoutes: ["/auth/login", "/auth/register"]
+});
+```
+
+**login.ts (API route)**
+
+```ts
+import { signToken } from "@kevinap29/sveltekit-lib/helpers";
+
+export const POST = async ({ request }) => {
+  const { username, password } = await request.json();
+  // validate user...
+  const token = signToken({ username }, process.env.JWT_SECRET!, { expiresIn: "1h" });
+  return new Response(JSON.stringify({ token }), { status: 200 });
+};
+```
+
+**protected-route.ts**
+
+```ts
+import type { JwtPayload } from "@kevinap29/sveltekit-lib/types";
+
+export const GET = async ({ locals }) => {
+  const user = locals.user as JwtPayload;
+  return new Response(`Hello ${user.username}`);
+};
+```
+
+---
+
+## 📖 License
+
+MIT © @kevinap29

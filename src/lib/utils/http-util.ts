@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { sleep } from '$lib/helpers/index.js'
 import type { HttpRequestType, HttpResponse } from '$lib/types/index.js';
 
 // Simple in-memory cache
@@ -11,11 +12,6 @@ const cache = new Map<string, {
 // Rate limiting state
 let lastRequestTime = 0;
 const MIN_INTERVAL = 123; // ms between requests
-
-// Delay helper
-function sleep(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export async function isAllowedByRobots(url: string, userAgent = '*'): Promise<boolean> {
 	try {

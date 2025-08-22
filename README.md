@@ -1,4 +1,3 @@
-````markdown
 # @kevinap29/sveltekit-lib
 
 A SvelteKit library providing helpers, hooks, services, and types for building robust SvelteKit applications.
@@ -8,7 +7,6 @@ A SvelteKit library providing helpers, hooks, services, and types for building r
 ```sh
 npm install @kevinap29/sveltekit-lib
 ```
-````
 
 ## Features
 

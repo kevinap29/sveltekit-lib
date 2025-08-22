@@ -4,38 +4,27 @@ import { DEV } from 'esm-env';
 import type { AuthenticationHeader, ProtectedAndFallbackEndpoint } from '$lib/types/index.js';
 
 /**
- * Provides middleware for protecting SvelteKit endpoints using JWT authentication.
- * 
- * The `ProtectedHooks` class allows you to specify protected endpoints and their fallback routes.
- * When a request is made to a protected endpoint in production mode, the class checks for a valid
- * Bearer token in the `Authorization` header. If authentication fails, the user is redirected to
- * the specified fallback route.
- * 
+ * A class that provides middleware for protecting SvelteKit endpoints using JWT authentication.
+ *
  * @remarks
- * - Endpoints must start with a `/`.
- * - In production, requests to protected endpoints require a valid JWT token.
- * - On successful authentication, user information is attached to `event.locals.user`.
- * 
+ * This class is designed to be used in SvelteKit hooks to restrict access to specified endpoints.
+ * If a request targets a protected endpoint and the user is not authenticated, it redirects to a fallback endpoint.
+ * Authentication is performed using a JWT token provided in the `Authorization` header.
+ *
  * @example
  * ```typescript
- * // ./src/app.d.ts
- * declare global {
- *	    namespace App {
-            interface Locals {
-                user?: ExtendJWTPayload;
-            }
- *	    }
- *}
- * 
- * // ./src/lib/your-hooks/
  * const protectedHooks = new ProtectedHooks('my-secret', [
- *   { protected: '/admin', fallback: '/login' }
+ *   { protected: '/api/private', fallback: '/login' }
  * ]);
- * export const handle = hooks.handle;
+ * export const handle = protectedHooks.handle;
  * ```
- * 
- * @param secret - The JWT secret used for token verification.
- * @param endpoints - An array of objects specifying protected and fallback endpoint paths.
+ *
+ * @param secret - The secret key used to verify JWT tokens.
+ * @param endpoints - An array of endpoint configurations specifying protected and fallback routes.
+ *
+ * @property secret - The JWT secret key.
+ * @property endpoints - The list of protected and fallback endpoint pairs.
+ * @method handle - The SvelteKit handle function to be used in hooks.
  */
 export class ProtectedHooks {
 	public secret: string;
@@ -46,74 +35,56 @@ export class ProtectedHooks {
 		this.endpoints = endpoints;
 	}
 
-    /**
-     * SvelteKit handle hook for protecting endpoints based on authentication.
-     *
-     * This hook checks if the current request targets a protected endpoint and, if in production,
-     * verifies the presence and validity of a Bearer token in the Authorization header.
-     * If authentication fails, the user is redirected to the specified fallback endpoint.
-     * On successful verification, the decoded JWT payload is assigned to `event.locals.user`.
-     *
-     * @param event - The request event containing URL, headers, and locals.
-     * @param resolve - The function to resolve the request and generate a response.
-     * @returns A promise resolving to the response after authentication checks.
-     *
-     * @throws Error if endpoint formats are invalid.
-     * @throws Redirect if authentication fails for protected endpoints.
-     */
+	/**
+	 * SvelteKit handle hook that protects specified endpoints by requiring authentication.
+	 *
+	 * For each configured endpoint, this hook checks if the request path matches a protected route.
+	 * If the application is in production and the user is not authenticated, it attempts to validate
+	 * the request's `Authorization` header as a Bearer token using the provided JWT secret.
+	 *
+	 * If authentication fails or the header is missing/invalid, the user is redirected to the endpoint's fallback URL.
+	 *
+	 * @param event - The SvelteKit event object containing request and locals.
+	 * @param resolve - The SvelteKit resolve function to continue processing the request.
+	 * @returns The resolved response if authentication passes, otherwise redirects to fallback.
+	 */
 	public handle: Handle = async ({ event, resolve }) => {
 		const isProduction = !event.locals.user && !DEV;
 
 		for (const endpoint of this.endpoints) {
 			try {
 				if (!endpoint.fallback.startsWith('/') || !endpoint.protected.startsWith('/')) {
-					throw redirect(
-						303,
-						`${event.url.origin}${endpoint.fallback}`
-					);
+					throw redirect(303, `${event.url.origin}${endpoint.fallback}`);
 				}
-	
-				if (event.url.pathname.startsWith(endpoint.protected) && isProduction && !event.locals.user) {
+
+				if (
+					event.url.pathname.startsWith(endpoint.protected) &&
+					isProduction &&
+					!event.locals.user
+				) {
 					const auth_header = event.request.headers.get(
 						'Authorization'
 					) as AuthenticationHeader | null;
-	
-					if (!auth_header)
-						throw redirect(
-							303,
-							`${event.url.origin}${endpoint.fallback}`
-						);
-	
+
+					if (!auth_header) throw redirect(303, `${event.url.origin}${endpoint.fallback}`);
+
 					if (!auth_header.startsWith('Bearer '))
-						throw redirect(
-							303,
-							`${event.url.origin}${endpoint.fallback}`
-						);
-	
+						throw redirect(303, `${event.url.origin}${endpoint.fallback}`);
+
 					const token = auth_header.split(' ').at(1);
-	
+
 					if (!token) {
-						throw redirect(
-							303,
-							`${event.url.origin}${endpoint.fallback}`
-						);
+						throw redirect(303, `${event.url.origin}${endpoint.fallback}`);
 					}
-	
+
 					const verify = await JWTHelper.verify(token, this.secret);
-					
-					if (!verify.email)
-						throw redirect(
-							303,
-							`${event.url.origin}${endpoint.fallback}`
-						);
-	
+
+					if (!verify.email) throw redirect(303, `${event.url.origin}${endpoint.fallback}`);
+
 					event.locals.user = { ...verify };
 				}
 			} catch {
-				throw redirect(
-					303,
-					`${event.url.origin}${endpoint.fallback}`
-				);
+				throw redirect(303, `${event.url.origin}${endpoint.fallback}`);
 			}
 		}
 

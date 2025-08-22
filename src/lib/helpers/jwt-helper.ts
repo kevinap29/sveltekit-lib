@@ -23,11 +23,7 @@ export class JWTHelper {
 	 * @returns A promise that resolves to the signed JWT string.
 	 * @throws If the secret is an empty string.
 	 */
-	public static async generate(
-		secret: string,
-		payload: ExtendJWTPayload,
-		expired?: JWTExpiresIn
-	) {
+	public static async generate(secret: string, payload: ExtendJWTPayload, expired?: JWTExpiresIn) {
 		if (secret === '') {
 			throw new Error('Token must not be empty');
 		}

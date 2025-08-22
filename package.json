@@ -1,6 +1,6 @@
 {
 	"name": "@kevinap29/sveltekit-lib",
-	"version": "0.1.6",
+	"version": "0.1.7",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
@@ -39,9 +39,9 @@
 			"types": "./dist/hooks/index.d.ts",
 			"svelte": "./dist/hooks/index.js"
 		},
-		"./utils": {
-			"types": "./dist/utils/index.d.ts",
-			"svelte": "./dist/utils/index.js"
+		"./services": {
+			"types": "./dist/services/index.d.ts",
+			"svelte": "./dist/services/index.js"
 		}
 	},
 	"license": "MIT",

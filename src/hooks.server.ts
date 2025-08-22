@@ -1,8 +1,8 @@
-import { ProtectedHooks } from "$lib/index.js";
-import { sequence } from "@sveltejs/kit/hooks";
+import { ProtectedHooks } from '$lib/index.js';
+import { sequence } from '@sveltejs/kit/hooks';
 
 const protectedHooks = new ProtectedHooks('test', [
-    { protected: '/admin', fallback: '/error?r=admin' }
+	{ protected: '/admin', fallback: '/error?r=admin' }
 ]);
 
-export const handle = sequence(protectedHooks.handle)
+export const handle = sequence(protectedHooks.handle);

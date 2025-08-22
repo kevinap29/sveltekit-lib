@@ -24,7 +24,7 @@ npm install @kevinap29/sveltekit-lib
 ### JWT Helper
 
 ```ts
-import { JWTHelper } from '@kevinap29/sveltekit-lib';
+import { JWTHelper } from '@kevinap29/sveltekit-lib/helpers';
 
 const token = await JWTHelper.generate('your-secret', { email: 'user@example.com', role: 'admin' });
 const payload = await JWTHelper.verify(token, 'your-secret');
@@ -33,7 +33,7 @@ const payload = await JWTHelper.verify(token, 'your-secret');
 ### Protected SvelteKit Endpoints
 
 ```ts
-import { ProtectedHooks } from '@kevinap29/sveltekit-lib';
+import { ProtectedHooks } from '@kevinap29/sveltekit-lib/hooks';
 import { sequence } from '@sveltejs/kit/hooks';
 
 const protectedHooks = new ProtectedHooks('your-secret', [
@@ -46,7 +46,7 @@ export const handle = sequence(protectedHooks.handle);
 ### HTTP Service
 
 ```ts
-import { httpRequest } from '@kevinap29/sveltekit-lib';
+import { httpRequest } from '@kevinap29/sveltekit-lib/services';
 
 const response = await httpRequest(
 	{
@@ -64,7 +64,7 @@ if (response.success) {
 ### Local Storage State
 
 ```ts
-import { LocalStorageState } from '@kevinap29/sveltekit-lib';
+import { LocalStorageState } from '@kevinap29/sveltekit-lib/states';
 
 const state = new LocalStorageState(true);
 state.setLocalStorage('key', JSON.stringify({ foo: 'bar' }));

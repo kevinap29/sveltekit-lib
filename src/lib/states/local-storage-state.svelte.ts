@@ -1,55 +1,62 @@
+import { browser } from '$app/environment';
 import { JSONHelper } from '$lib/helpers/json-helper.js';
 import type { IMethodResponse } from '$lib/types/index.js';
 
 const SET_LOCAL_STORAGE_SUCCESS = `Local Storage Set Successfully`;
+const SET_LOCAL_STORAGE_FAILED = `Failed Set data local storage`;
 const GET_LOCAL_STORAGE_SUCCESS = `Local Storage Get Successfully`;
 const GET_LOCAL_STORAGE_FAILED = `Failed Get data local storage`;
 const REMOVE_LOCAL_STORAGE_SUCCESS = `Local Storage Remove Successfully`;
+const REMOVE_LOCAL_STORAGE_FAILED = `Failed Remove data local storage`;
 
 /**
- * Manages localStorage operations in a browser environment.
- *
- * This class provides methods to set, get, and remove items from localStorage,
- * with type-safe parsing and error handling. It checks for browser context before
- * performing any localStorage operations.
- *
- * @example
- * ```typescript
- * const state = new LocalStorageState(true);
- * state.setLocalStorage('key', JSON.stringify({ foo: 'bar' }));
- * const result = state.getLocalStorage<{ foo: string }>('key');
- * ```
- *
+ * Manages state using the browser's `localStorage` or `sessionStorage`.
+ * 
+ * Provides methods to initialize the storage, set, get, and remove items,
+ * with type-safe responses and error handling.
+ * 
+ * Usage:
+ * Use `setLocalStorage`, `getLocalStorage`, and `removeLocalStorage` to interact with storage.
+ * 
  * @remarks
- * - All methods return an `IMethodResponse` object indicating success, message, and optional data.
- * - The class should be instantiated with a boolean indicating browser context.
- *
- * @property {Storage} localStorage - Injection localStorage Variable from browser.
- * @property {number} length - The number of items in localStorage.
- *
- * @method setLocalStorage - Stores a string value under a given key in localStorage.
- * @method getLocalStorage - Retrieves and parses a value from localStorage by key.
- * @method removeLocalStorage - Removes an item from localStorage by key.
+ * - All operations return an `IMethodResponse` indicating success, message, and optional data or cause.
+ * - Uses `JSONHelper.safeParse` for safe JSON parsing when retrieving values.
+ * - The `length` property reflects the number of items in the storage.
  */
-export class LocalStorageState {
-	private localStorage: Storage; 
+class LocalStorageState {
+	private ls: Storage | null = null; 
 	public length: number = $state(0);
 
-	constructor(localStorage: Storage) {
-		this.localStorage = localStorage;
-		this.length = localStorage.length;
+	/**
+	 * Initializes the local storage state by assigning the provided `Storage` instance.
+	 * Also sets the `length` property to the number of items in the storage.
+	 *
+	 * @param ls - The `Storage` instance (e.g., `localStorage` or `sessionStorage`) to use for state management.
+	 */
+	public init(ls: Storage) {
+		this.ls = ls;
+		this.length = this.ls.length;
 	}
 
 	/**
-	 * Sets a value in the browser's local storage under the specified key.
+	 * Sets a value in local storage for the specified key.
 	 *
 	 * @param key - The key under which the value will be stored.
-	 * @param value - The string value to store.
+	 * @param value - The value to store in local storage.
 	 * @returns An object indicating the success or failure of the operation.
-	 *          If not running in a browser environment, returns a failure response.
+	 *          If local storage is not initialized, returns a failure response with a cause.
+	 *          On success, returns a success response with a message and null data.
 	 */
-	public setLocalStorage(key: string, value: string): IMethodResponse<null> {
-		this.localStorage.setItem(key, value);
+	public set(key: string, value: string): IMethodResponse<null> {
+		if (!this.ls) {
+			return {
+				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+				success: false,
+				message: SET_LOCAL_STORAGE_FAILED
+			}
+		}
+		
+		this.ls.setItem(key, value);
 
 		return {
 			success: true,
@@ -61,16 +68,27 @@ export class LocalStorageState {
 	/**
 	 * Retrieves and parses a value from localStorage by the specified key.
 	 *
-	 * @template T The expected type of the parsed value.
+	 * @template T - The expected type of the parsed value.
 	 * @param {string} key - The key to look up in localStorage.
 	 * @returns {IMethodResponse<T>} An object containing the result of the operation:
-	 * - If the key does not exist, returns a failure response with a cause and message.
-	 * - If parsing fails, returns a failure response with the parsing error message.
-	 * - If successful, returns a success response with the parsed data.
+	 * - If successful, `data` holds the parsed value, `success` is true, and `message` indicates success.
+	 * - If unsuccessful, `cause` describes the error, `success` is false, and `message` indicates failure.
+	 *
+	 * @remarks
+	 * - Ensure that `this.init(localStorage)` has been called before using this method.
+	 * - Uses `JSONHelper.safeParse` to safely parse the stored value.
 	 */
-	public getLocalStorage<T>(key: string): IMethodResponse<T> {
+	public get<T>(key: string): IMethodResponse<T> {
 		try {
-			const value = this.localStorage.getItem(key);
+			if (!this.ls) {
+				return {
+					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+					success: false,
+					message: GET_LOCAL_STORAGE_FAILED
+				}
+			}
+
+			const value = this.ls.getItem(key);
 
 			if (!value) {
 				return {
@@ -107,15 +125,22 @@ export class LocalStorageState {
 	}
 
 	/**
-	 * Removes an item from the browser's local storage by the specified key.
+	 * Removes an item from local storage by the specified key.
 	 *
 	 * @param key - The key of the item to remove from local storage.
-	 * @returns An object indicating the success or failure of the operation.
-	 *          If not running in a browser environment, returns a failure object with a cause.
-	 *          On success, returns a success object with a message and null data.
+	 * @returns An object indicating the success or failure of the operation, including a message and optional data.
+	 * If local storage is not initialized, returns a failure object with a cause.
 	 */
-	public removeLocalStorage(key: string) {
-		this.localStorage.removeItem(key);
+	public remove(key: string) {
+		if (!this.ls) {
+			return {
+				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+				success: false,
+				message: REMOVE_LOCAL_STORAGE_FAILED
+			}
+		}
+
+		this.ls.removeItem(key);
 
 		return {
 			success: true,
@@ -124,3 +149,11 @@ export class LocalStorageState {
 		};
 	}
 }
+
+let temp = new LocalStorageState();
+
+if (browser) {
+	temp.init(localStorage)
+}
+
+export const localStorageState = temp;

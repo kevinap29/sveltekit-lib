@@ -62,11 +62,9 @@ if (response.success) {
 ### Local Storage State
 
 ```ts
-import { LocalStorageState } from '@kevinap29/sveltekit-lib/states';
+import { localStorageState } from '@kevinap29/sveltekit-lib/states';
 
-const state = new LocalStorageState(localStorage);
-$state.setLocalStorage('key', JSON.stringify({ foo: 'bar' }));
-const result = $state.getLocalStorage<{ foo: string }>('key');
+localStorageState.set('test', '1234');
 ```
 
 ## Types

@@ -76,6 +76,9 @@ function universalReplacer(key: string, value: any): any {
  * ```
  */
 export class JSONHelper {
+	public static looksLikeObject(str: string): boolean {
+		return /^\s*\{[\s\S]*\}\s*$/.test(str);
+	}
 	/**
 	 * Safely serializes a given input to a JSON string using a universal replacer.
 	 * Returns a standardized response object indicating success or failure.
@@ -116,6 +119,14 @@ export class JSONHelper {
 	 */
 	public static safeParse<T>(input: string): IMethodResponse<T> {
 		try {
+			if (!this.looksLikeObject(input)) {
+				return {
+					data: input as T,
+					success: true,
+					message: PARSE_FAILED
+				};
+			}
+
 			return {
 				data: JSON.parse(input, universalReviver) as T,
 				success: true,

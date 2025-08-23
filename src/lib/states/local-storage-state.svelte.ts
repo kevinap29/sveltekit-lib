@@ -1,4 +1,4 @@
-import { safeParseJson } from '$lib/helpers/json-helper.js';
+import { JSONHelper } from '$lib/helpers/json-helper.js';
 import type { IMethodResponse } from '$lib/types/index.js';
 
 const SET_LOCAL_STORAGE_SUCCESS = `Local Storage Set Successfully`;
@@ -93,7 +93,7 @@ export class LocalStorageState {
 				};
 			}
 
-			const parseJson = safeParseJson<T>(value);
+			const parseJson = JSONHelper.safeParse<T>(value);
 
 			if (!parseJson.success) {
 				return {

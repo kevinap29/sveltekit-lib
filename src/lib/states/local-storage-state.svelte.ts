@@ -54,14 +54,18 @@ export class LocalStorageState {
 	 */
 	public set(key: string, value: string): IMethodResponse<null> {
 		if (!this.ls) {
-			return {
-				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
-				success: false,
-				message: SET_LOCAL_STORAGE_FAILED
+			if (BROWSER) {
+				this.init(localStorage)
+			} else {
+				return {
+					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+					success: false,
+					message: SET_LOCAL_STORAGE_FAILED
+				}
 			}
 		}
 		
-		this.ls.setItem(key, value);
+		this.ls?.setItem(key, value);
 
 		return {
 			success: true,
@@ -86,14 +90,18 @@ export class LocalStorageState {
 	public get<T>(key: string): IMethodResponse<T> {
 		try {
 			if (!this.ls) {
-				return {
-					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
-					success: false,
-					message: GET_LOCAL_STORAGE_FAILED
+				if (BROWSER) {
+					this.init(localStorage)
+				} else {
+					return {
+						cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+						success: false,
+						message: GET_LOCAL_STORAGE_FAILED
+					}
 				}
 			}
 
-			const value = this.ls.getItem(key);
+			const value = this.ls?.getItem(key);
 
 			if (!value) {
 				return {
@@ -138,14 +146,18 @@ export class LocalStorageState {
 	 */
 	public remove(key: string) {
 		if (!this.ls) {
-			return {
-				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
-				success: false,
-				message: REMOVE_LOCAL_STORAGE_FAILED
+			if (BROWSER) {
+				this.init(localStorage)
+			} else {
+				return {
+					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+					success: false,
+					message: REMOVE_LOCAL_STORAGE_FAILED
+				}
 			}
 		}
 
-		this.ls.removeItem(key);
+		this.ls?.removeItem(key);
 
 		return {
 			success: true,

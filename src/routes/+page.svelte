@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { JWTHelper } from '$lib/helpers/index.js';
-	import { localStorageState } from '$lib/states/index.js'
+	import { LocalStorageState } from '$lib/states/index.js'
 
 	let token = $state('loading...');
 
-	localStorageState.set('test', '12315123')
+	const localStorageState = new LocalStorageState();
+	localStorageState.set('test', '1234')
 
 	async function getToken() {
 		token = await JWTHelper.generate('test', { role: '', email: '' });

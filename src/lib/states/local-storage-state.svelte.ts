@@ -23,17 +23,22 @@ const REMOVE_LOCAL_STORAGE_FAILED = `Failed Remove data local storage`;
  * - Uses `JSONHelper.safeParse` for safe JSON parsing when retrieving values.
  * - The `length` property reflects the number of items in the storage.
  */
-class LocalStorageState {
+export class LocalStorageState {
 	private ls: Storage | null = null; 
 	public length: number = $state(0);
 
+	constructor() {
+		if (BROWSER) {
+			this.init(localStorage)
+		}
+	}
 	/**
 	 * Initializes the local storage state by assigning the provided `Storage` instance.
 	 * Also sets the `length` property to the number of items in the storage.
 	 *
 	 * @param ls - The `Storage` instance (e.g., `localStorage` or `sessionStorage`) to use for state management.
 	 */
-	public init(ls: Storage) {
+	private init(ls: Storage) {
 		this.ls = ls;
 		this.length = this.ls.length;
 	}
@@ -149,11 +154,3 @@ class LocalStorageState {
 		};
 	}
 }
-
-let temp = new LocalStorageState();
-
-if (BROWSER) {
-	temp.init(localStorage)
-}
-
-export const localStorageState = temp;

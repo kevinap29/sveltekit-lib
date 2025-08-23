@@ -57,57 +57,78 @@ function universalReplacer(key: string, value: any): any {
 }
 
 /**
- * Safely serializes a given input to a JSON string using a universal replacer.
- * Returns a standardized response object indicating success or failure.
+ * A utility class for safe JSON serialization and deserialization.
  *
- * @template T - The type of the input to be serialized.
- * @param input - The value to serialize to JSON.
- * @returns An {@link IMethodResponse} containing the JSON string on success,
- * or an error message on failure.
+ * Provides static methods to safely stringify and parse JSON data using universal replacers and revivers.
+ * Each method returns a standardized {@link IMethodResponse} indicating success or failure, along with
+ * the resulting data or error information.
+ *
+ * @remarks
+ * - Uses custom replacer and reviver functions for enhanced compatibility.
+ * - Handles errors gracefully, returning informative messages.
+ *
+ * @example
+ * ```typescript
+ * const result = JSONHelper.safeStringify({ foo: "bar" });
+ * if (result.success) {
+ *   console.log(result.data); // Serialized JSON string
+ * }
+ * ```
  */
-export function safeStringifyJson<T>(input: T): IMethodResponse<string> {
-	try {
-		return {
-			data: JSON.stringify(input, universalReplacer),
-			success: true,
-			message: STRINGIFY_SUCCESS
-		};
-	} catch (error: unknown) {
-		const err = error as Error;
+export class JSONHelper {
+	/**
+	 * Safely serializes a given input to a JSON string using a universal replacer.
+	 * Returns a standardized response object indicating success or failure.
+	 *
+	 * @template T - The type of the input to be serialized.
+	 * @param input - The value to serialize to JSON.
+	 * @returns An {@link IMethodResponse} containing the JSON string on success,
+	 * or an error message on failure.
+	 */
+	public static safeStringify<T>(input: T): IMethodResponse<string> {
+		try {
+			return {
+				data: JSON.stringify(input, universalReplacer),
+				success: true,
+				message: STRINGIFY_SUCCESS
+			};
+		} catch (error: unknown) {
+			const err = error as Error;
 
-		return {
-			cause: err.message,
-			success: false,
-			message: STRINGIFY_FAILED
-		};
+			return {
+				cause: err.message,
+				success: false,
+				message: STRINGIFY_FAILED
+			};
+		}
 	}
-}
 
-/**
- * Safely parses a JSON string and returns a typed result.
- *
- * Attempts to parse the provided JSON string using a universal reviver.
- * If parsing succeeds, returns an object containing the parsed data, a success flag, and a success message.
- * If parsing fails, returns an object containing the error message, a failure flag, and a failure message.
- *
- * @template T - The expected type of the parsed JSON data.
- * @param input - The JSON string to parse.
- * @returns An {@link IMethodResponse} containing either the parsed data or error information.
- */
-export function safeParseJson<T>(input: string): IMethodResponse<T> {
-	try {
-		return {
-			data: JSON.parse(input, universalReviver) as T,
-			success: true,
-			message: PARSE_SUCCESS
-		};
-	} catch (error: unknown) {
-		const err = error as Error;
+	/**
+	 * Safely parses a JSON string and returns a typed result.
+	 *
+	 * Attempts to parse the provided JSON string using a universal reviver.
+	 * If parsing succeeds, returns an object containing the parsed data, a success flag, and a success message.
+	 * If parsing fails, returns an object containing the error message, a failure flag, and a failure message.
+	 *
+	 * @template T - The expected type of the parsed JSON data.
+	 * @param input - The JSON string to parse.
+	 * @returns An {@link IMethodResponse} containing either the parsed data or error information.
+	 */
+	public static safeParse<T>(input: string): IMethodResponse<T> {
+		try {
+			return {
+				data: JSON.parse(input, universalReviver) as T,
+				success: true,
+				message: PARSE_SUCCESS
+			};
+		} catch (error: unknown) {
+			const err = error as Error;
 
-		return {
-			cause: err.message,
-			success: false,
-			message: PARSE_FAILED
-		};
+			return {
+				cause: err.message,
+				success: false,
+				message: PARSE_FAILED
+			};
+		}
 	}
 }

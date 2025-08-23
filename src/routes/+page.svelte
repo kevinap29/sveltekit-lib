@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { JWTHelper } from '$lib/index.js';
+	import { JWTHelper } from '$lib/helpers/index.js';
 
 	let token = $state('loading...');
 
@@ -26,7 +26,7 @@
 	target="_blank"
 	style="display:inline-grid;justify-items:center;align-content:start;gap:0.5rem;"
 >
-	<input class="pp-GZKMJH6QPVGSC" type="submit" value="Buy Now" />
+	<input class="pp-GZKMJH6QPVGSC" type="submit" value="Buy Me Coffee" />
 	<img src="https://www.paypalobjects.com/images/Debit_Credit.svg" alt="cards" />
 	<section style="font-size: 0.75rem;">
 		Powered by <img

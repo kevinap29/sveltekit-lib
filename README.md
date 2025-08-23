@@ -62,11 +62,12 @@ if (response.success) {
 ### Local Storage State
 
 ```ts
+import { browser } from '$app/environment';
 import { LocalStorageState } from '@kevinap29/sveltekit-lib/states';
 
-const state = new LocalStorageState(true);
-state.setLocalStorage('key', JSON.stringify({ foo: 'bar' }));
-const result = state.getLocalStorage<{ foo: string }>('key');
+const state = new LocalStorageState(browser);
+$state.setLocalStorage('key', JSON.stringify({ foo: 'bar' }));
+const result = $state.getLocalStorage<{ foo: string }>('key');
 ```
 
 ## Types
@@ -76,3 +77,7 @@ See [`src/lib/types/index.ts`](src/lib/types/index.ts) for all exported types.
 ## License
 
 MIT
+
+## Donate
+
+[![Buy Me Coffee](https://img.shields.io/badge/Buy%20Me%20Coffee-FFD140?style=for-the-badge&logo=paypal&logoColor=black)](https://www.paypal.com/ncp/payment/GZKMJH6QPVGSC)

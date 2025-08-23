@@ -2,11 +2,9 @@ import { JSONHelper } from '$lib/helpers/json-helper.js';
 import type { IMethodResponse } from '$lib/types/index.js';
 
 const SET_LOCAL_STORAGE_SUCCESS = `Local Storage Set Successfully`;
-const SET_LOCAL_STORAGE_FAILED = `Failed set data local storage`;
 const GET_LOCAL_STORAGE_SUCCESS = `Local Storage Get Successfully`;
 const GET_LOCAL_STORAGE_FAILED = `Failed Get data local storage`;
 const REMOVE_LOCAL_STORAGE_SUCCESS = `Local Storage Remove Successfully`;
-const REMOVE_LOCAL_STORAGE_FAILED = `Failed Remove data local storage`;
 
 /**
  * Manages localStorage operations in a browser environment.
@@ -26,7 +24,7 @@ const REMOVE_LOCAL_STORAGE_FAILED = `Failed Remove data local storage`;
  * - All methods return an `IMethodResponse` object indicating success, message, and optional data.
  * - The class should be instantiated with a boolean indicating browser context.
  *
- * @property {boolean} isBrowser - Indicates if running in a browser environment.
+ * @property {Storage} localStorage - Injection localStorage Variable from browser.
  * @property {number} length - The number of items in localStorage.
  *
  * @method setLocalStorage - Stores a string value under a given key in localStorage.
@@ -34,15 +32,12 @@ const REMOVE_LOCAL_STORAGE_FAILED = `Failed Remove data local storage`;
  * @method removeLocalStorage - Removes an item from localStorage by key.
  */
 export class LocalStorageState {
-	private isBrowser: boolean = $state(false);
+	private localStorage: Storage; 
 	public length: number = $state(0);
 
-	constructor(browser: boolean) {
-		this.isBrowser = browser;
-
-		if (this.isBrowser) {
-			this.length = localStorage.length;
-		}
+	constructor(localStorage: Storage) {
+		this.localStorage = localStorage;
+		this.length = localStorage.length;
 	}
 
 	/**
@@ -54,15 +49,7 @@ export class LocalStorageState {
 	 *          If not running in a browser environment, returns a failure response.
 	 */
 	public setLocalStorage(key: string, value: string): IMethodResponse<null> {
-		if (!this.isBrowser) {
-			return {
-				cause: `State only on browser`,
-				success: false,
-				message: SET_LOCAL_STORAGE_FAILED
-			};
-		}
-
-		localStorage.setItem(key, value);
+		this.localStorage.setItem(key, value);
 
 		return {
 			success: true,
@@ -83,7 +70,7 @@ export class LocalStorageState {
 	 */
 	public getLocalStorage<T>(key: string): IMethodResponse<T> {
 		try {
-			const value = localStorage.getItem(key);
+			const value = this.localStorage.getItem(key);
 
 			if (!value) {
 				return {
@@ -128,15 +115,7 @@ export class LocalStorageState {
 	 *          On success, returns a success object with a message and null data.
 	 */
 	public removeLocalStorage(key: string) {
-		if (!this.isBrowser) {
-			return {
-				cause: `State only on browser`,
-				success: false,
-				message: REMOVE_LOCAL_STORAGE_FAILED
-			};
-		}
-
-		localStorage.removeItem(key);
+		this.localStorage.removeItem(key);
 
 		return {
 			success: true,

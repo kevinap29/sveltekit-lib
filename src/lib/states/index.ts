@@ -1,1 +1,1 @@
-export * from './local-storage-state.js';
+export * from './local-storage-state.svelte.js';

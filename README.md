@@ -62,9 +62,11 @@ if (response.success) {
 ### Local Storage State
 
 ```ts
+import { browser } from '$app/environment';
 import { LocalStorageState } from '@kevinap29/sveltekit-lib/states';
 
 const localStorageState = new LocalStorageState();
+localStorageState.init(browser ? localStorage : null);
 localStorageState.set('test', '1234');
 ```
 

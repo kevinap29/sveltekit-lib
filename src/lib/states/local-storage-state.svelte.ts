@@ -1,4 +1,3 @@
-import { BROWSER } from "esm-env";
 import { JSONHelper } from '$lib/helpers/json-helper.js';
 import type { IMethodResponse } from '$lib/types/index.js';
 
@@ -27,18 +26,17 @@ export class LocalStorageState {
 	private ls: Storage | null = null; 
 	public length: number = $state(0);
 
-	constructor() {
-		if (BROWSER) {
-			this.init(localStorage)
-		}
-	}
 	/**
 	 * Initializes the local storage state by assigning the provided `Storage` instance.
 	 * Also sets the `length` property to the number of items in the storage.
 	 *
 	 * @param ls - The `Storage` instance (e.g., `localStorage` or `sessionStorage`) to use for state management.
 	 */
-	private init(ls: Storage) {
+	public init(ls: Storage | null) {
+		if (!ls) {
+			return;
+		}
+
 		this.ls = ls;
 		this.length = this.ls.length;
 	}
@@ -54,14 +52,10 @@ export class LocalStorageState {
 	 */
 	public set(key: string, value: string): IMethodResponse<null> {
 		if (!this.ls) {
-			if (BROWSER) {
-				this.init(localStorage)
-			} else {
-				return {
-					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
-					success: false,
-					message: SET_LOCAL_STORAGE_FAILED
-				}
+			return {
+				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+				success: false,
+				message: SET_LOCAL_STORAGE_FAILED
 			}
 		}
 		
@@ -90,14 +84,10 @@ export class LocalStorageState {
 	public get<T>(key: string): IMethodResponse<T> {
 		try {
 			if (!this.ls) {
-				if (BROWSER) {
-					this.init(localStorage)
-				} else {
-					return {
-						cause: `Local Storage is not initialize, run this.init(localStorage) before`,
-						success: false,
-						message: GET_LOCAL_STORAGE_FAILED
-					}
+				return {
+					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+					success: false,
+					message: GET_LOCAL_STORAGE_FAILED
 				}
 			}
 
@@ -146,14 +136,10 @@ export class LocalStorageState {
 	 */
 	public remove(key: string) {
 		if (!this.ls) {
-			if (BROWSER) {
-				this.init(localStorage)
-			} else {
-				return {
-					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
-					success: false,
-					message: REMOVE_LOCAL_STORAGE_FAILED
-				}
+			return {
+				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
+				success: false,
+				message: REMOVE_LOCAL_STORAGE_FAILED
 			}
 		}
 

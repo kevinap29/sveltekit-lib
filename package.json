@@ -1,6 +1,6 @@
 {
 	"name": "@kevinap29/sveltekit-lib",
-	"version": "0.1.14",
+	"version": "0.1.15",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",

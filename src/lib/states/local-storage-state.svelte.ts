@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { BROWSER } from "esm-env";
 import { JSONHelper } from '$lib/helpers/json-helper.js';
 import type { IMethodResponse } from '$lib/types/index.js';
 
@@ -152,7 +152,7 @@ class LocalStorageState {
 
 let temp = new LocalStorageState();
 
-if (browser) {
+if (BROWSER) {
 	temp.init(localStorage)
 }
 

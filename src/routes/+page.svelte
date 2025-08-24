@@ -3,15 +3,26 @@
 	import { getContext } from 'svelte';
 	import type { LocalStorageState } from '$lib/states/index.js';
 
+	import { Seo, type SeoProps } from '$lib/components/Seo/index.js';
+	import { page } from '$app/state';
 	let token = $state('loading...');
 
 	async function getToken() {
 		token = await JWTHelper.generate('test', { role: '', email: '' });
 	}
 
-	const localStorageState = getContext<LocalStorageState>('localStorageState');
-	localStorageState.set('page', 'home');
+	// const localStorageState = getContext<LocalStorageState>('localStorageState');
+	// localStorageState.set('page', 'home');
 
+	const seoProps: SeoProps = {
+		title: 'SvelteKit Library Starter',
+		description:
+			'Create your package using @sveltejs/package and preview/showcase your work with SvelteKit',
+		keywords: ['sveltekit', 'svelte', 'library', 'starter', 'component', 'package'],
+		image: page.url.origin + '/logo_mainapi.png',
+		type: 'website',
+		url: page.url.origin + page.url.pathname
+	};
 	$effect(() => {
 		const interval = setTimeout(async () => await getToken(), 2000);
 
@@ -20,6 +31,8 @@
 		};
 	});
 </script>
+
+<Seo data={seoProps} />
 
 <h1>Welcome to your library project</h1>
 <p>Create your package using @sveltejs/package and preview/showcase your work with SvelteKit</p>

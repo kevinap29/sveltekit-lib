@@ -10,20 +10,20 @@ const REMOVE_LOCAL_STORAGE_FAILED = `Failed Remove data local storage`;
 
 /**
  * Manages state using the browser's `localStorage` or `sessionStorage`.
- * 
+ *
  * Provides methods to initialize the storage, set, get, and remove items,
  * with type-safe responses and error handling.
- * 
+ *
  * Usage:
  * Use `setLocalStorage`, `getLocalStorage`, and `removeLocalStorage` to interact with storage.
- * 
+ *
  * @remarks
  * - All operations return an `IMethodResponse` indicating success, message, and optional data or cause.
  * - Uses `JSONHelper.safeParse` for safe JSON parsing when retrieving values.
  * - The `length` property reflects the number of items in the storage.
  */
 export class LocalStorageState {
-	private ls: Storage | null = null; 
+	private ls: Storage | null = null;
 	public length: number = $state(0);
 
 	/**
@@ -56,9 +56,9 @@ export class LocalStorageState {
 				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
 				success: false,
 				message: SET_LOCAL_STORAGE_FAILED
-			}
+			};
 		}
-		
+
 		this.ls?.setItem(key, value);
 
 		return {
@@ -88,7 +88,7 @@ export class LocalStorageState {
 					cause: `Local Storage is not initialize, run this.init(localStorage) before`,
 					success: false,
 					message: GET_LOCAL_STORAGE_FAILED
-				}
+				};
 			}
 
 			const value = this.ls?.getItem(key);
@@ -140,7 +140,7 @@ export class LocalStorageState {
 				cause: `Local Storage is not initialize, run this.init(localStorage) before`,
 				success: false,
 				message: REMOVE_LOCAL_STORAGE_FAILED
-			}
+			};
 		}
 
 		this.ls?.removeItem(key);

@@ -1,10 +1,11 @@
 <script lang="ts">
 	import '../app.css';
-	import { LocalStorageState } from '$lib/states/index.js'
+	import { LocalStorageState } from '$lib/states/index.js';
 	import { setContext } from 'svelte';
 
 	let { children } = $props();
-	const hasLocalStorage = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
+	const hasLocalStorage =
+		typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 	console.log(hasLocalStorage);
 	const localStorageState = new LocalStorageState();
 	localStorageState.init(hasLocalStorage ? localStorage : null);

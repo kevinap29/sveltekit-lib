@@ -1,16 +1,19 @@
 import * as cheerio from 'cheerio';
 import { sleep } from '$lib/helpers/index.js';
+import { JSONHelper } from '$lib/helpers/index.js';
+import { CacheService } from '$lib/services/index.js';
 import type { HttpRequestType, HttpResponse } from '$lib/types/index.js';
 
 // Simple in-memory cache
-const cache = new Map<
-	string,
-	{
-		data: string | object;
-		message: string;
-		timestamp: number;
-	}
->();
+const cacheService = new CacheService<string | object>();
+// const cache = new Map<
+// 	string,
+// 	{
+// 		data: string | object;
+// 		message: string;
+// 		timestamp: number;
+// 	}
+// >();
 
 // Rate limiting state
 let lastRequestTime = 0;
@@ -103,7 +106,8 @@ export async function httpRequest<T>(
 
 	try {
 		// 1. Caching (10 minutes)
-		const cached = cache.get(request.input.toString());
+		// const cached = cache.get(request.input.toString());
+		const cached = cacheService.get(request.input.toString());
 		if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
 			result.status = 200;
 			result.success = true;
@@ -147,28 +151,30 @@ export async function httpRequest<T>(
 			result.success = true;
 			result.message = termsUrl ? `⚠ Check Terms of Service before scraping: ${termsUrl}` : 'OK';
 			result.value = html;
-
-			cache.set(request.input.toString(), {
-				data: html,
-				message: result.message,
-				timestamp: Date.now()
-			});
 		} else {
 			// JSON mode
 			const response = await request.fetch(request.input, request.init);
-			const data = await response.json();
+			const parse = JSONHelper.safeParse<T>(await response.json());
+
+			if (!parse.success) {
+				result.status = 500;
+				result.success = false;
+				result.message = parse.message;
+
+				return result;
+			}
 
 			result.status = 200;
 			result.success = true;
 			result.message = 'OK';
-			result.value = data as T;
-
-			cache.set(request.input.toString(), {
-				data: data,
-				message: result.message,
-				timestamp: Date.now()
-			});
+			result.value = parse.data;
 		}
+
+		cacheService.set(
+			request.input.toString(),
+			typeof result.value === 'string' ? result.value : (result.value as object),
+			result.message
+		);
 	} catch (e: unknown) {
 		const error = e as Error;
 		console.error(error);

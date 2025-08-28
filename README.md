@@ -55,6 +55,63 @@ import { httpRequest } from '@kevinap29/sveltekit-lib/services';
 const { success, value, error } = await httpRequest({ fetch, input: 'https://api.example.com/data', options: { method: 'POST', body: JSON.stringify({ foo: 'bar' }) } }, { type: 'json', checkRobots: true });
 ```
 
+### Cookies Service
+
+A type-safe wrapper for SvelteKit's cookie management with standardized responses.
+
+```typescript 
+import { CookiesService } from '@kevinap29/sveltekit-lib/services';
+
+// Create a new CookiesService instance in a SvelteKit endpoint or load function 
+export const load = ({ cookies }) => { 
+	const cookieService = new CookiesService(cookies);
+	// Set a cookie with custom options 
+	cookieService.set({ 
+		name: 'user-token', 
+		value: 'abc123', 
+		path: '/', 
+		maxAge: 60 * 60 * 24, 
+		secure: true, 
+		sameSite: 'lax' 
+	});
+
+	// Get and parse a cookie value 
+	const { success, data } = cookieService.get<{ id: string }>('user-data');
+
+	// Delete a cookie 
+	cookieService.delete('session-id');
+
+	// Rest of your code
+}
+```
+
+#### Features
+
+- Type-safe cookie operations
+- Standardized response format
+- JSON parsing of cookie values
+- Configurable security options
+
+#### Methods
+
+| Method   | Description                                     | Example                                                      |
+|----------|-------------------------------------------------|--------------------------------------------------------------|
+| `set`    | Sets a cookie with the provided data            | `cookieService.set({ name: 'token', value: 'abc', path: '/' })` |
+| `get`    | Gets and optionally parses a cookie value       | `cookieService.get<UserData>('user-data')`                   |
+| `delete` | Deletes a cookie by name                        | `cookieService.delete('session-id')`                         |
+
+#### Cookie Options
+
+| Option      | Type                      | Default     | Description                                       |
+|-------------|---------------------------|-------------|---------------------------------------------------|
+| `name`      | string                    | (required)  | The name of the cookie                            |
+| `value`     | string                    | (required)  | The value to be stored in the cookie              |
+| `path`      | string                    | (required)  | The path on the server for which the cookie is valid |
+| `maxAge`    | number                    | 30 days     | The maximum age of the cookie in seconds          |
+| `noMaxAge`  | boolean                   | false       | If true, the cookie will not have a max age set   |
+| `secure`    | boolean                   | true        | If true, the cookie will only be sent over HTTPS  |
+| `sameSite`  | 'lax' \| 'strict' \| 'none' | 'lax'      | Controls whether the cookie is sent with cross-site requests |
+
 ### Local Storage State
 
 ```ts

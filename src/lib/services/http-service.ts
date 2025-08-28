@@ -1,21 +1,18 @@
 import * as cheerio from 'cheerio';
 import { sleep } from '$lib/helpers/index.js';
 import { JSONHelper } from '$lib/helpers/index.js';
-import { CacheService } from '$lib/services/index.js';
+import { CacheService } from '$lib/services/cache-service.js';
 import type { HttpRequestType, HttpResponse } from '$lib/types/index.js';
 
-// Simple in-memory cache
+/**
+ * Simple in-memory cache for HTTP responses
+ * Replaces previous Map implementation with CacheService
+ */
 const cacheService = new CacheService<string | object>();
-// const cache = new Map<
-// 	string,
-// 	{
-// 		data: string | object;
-// 		message: string;
-// 		timestamp: number;
-// 	}
-// >();
 
-// Rate limiting state
+/**
+ * Rate limiting configuration
+ */
 let lastRequestTime = 0;
 const MIN_INTERVAL = 123; // ms between requests
 
@@ -55,7 +52,7 @@ export async function isAllowedByRobots(url: string, userAgent = '*'): Promise<b
 		}
 		return true;
 	} catch {
-		return true; // Fail open
+		return true; // Fail open - if there's an error checking robots.txt, allow the request
 	}
 }
 
@@ -77,11 +74,18 @@ function findTermsUrl(html: string, baseUrl: string): string | null {
  * Sends an HTTP request with caching, rate limiting, and optional robots.txt and Terms of Service checks.
  *
  * @template T The expected type of the response value when `option.type` is `'json'`.
- * @param request The HTTP request configuration, including input URL and fetch options.
- * @param option Options for the request:
+ * @param request The HTTP request configuration object containing:
+ *  - `input`: The URL or resource to request
+ *  - `init`: Optional fetch configuration options
+ *  - `fetch`: The fetch implementation to use
+ * @param option Configuration options:
  *  - `type`: Specifies the response format, either `'text'` (HTML/text) or `'json'`.
  *  - `checkRobots`: If `true`, checks robots.txt before making the request.
- * @returns A promise that resolves to an `HttpResponse` containing the response data or an error message.
+ * @returns A promise that resolves to an `HttpResponse` containing:
+ *  - `status`: HTTP status code
+ *  - `success`: Boolean indicating if the request succeeded
+ *  - `message`: Response message or error information
+ *  - `value`: Response data (type depends on the `option.type` setting)
  *
  * @remarks
  * - Caches responses for 10 minutes to reduce redundant requests.
@@ -105,8 +109,7 @@ export async function httpRequest<T>(
 	};
 
 	try {
-		// 1. Caching (10 minutes)
-		// const cached = cache.get(request.input.toString());
+		// 1. Check cache (10 minutes expiration)
 		const cached = cacheService.get(request.input.toString());
 		if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
 			result.status = 200;
@@ -117,7 +120,7 @@ export async function httpRequest<T>(
 			return result;
 		}
 
-		// 2. Rate limiting
+		// 2. Apply rate limiting
 		const now = Date.now();
 		const timeSinceLast = now - lastRequestTime;
 		if (timeSinceLast < MIN_INTERVAL) {
@@ -125,6 +128,7 @@ export async function httpRequest<T>(
 		}
 		lastRequestTime = Date.now();
 
+		// 3. Check robots.txt if enabled
 		if (option.checkRobots) {
 			const allowed = await isAllowedByRobots(request.input.toString());
 			if (!allowed) {
@@ -136,7 +140,7 @@ export async function httpRequest<T>(
 			}
 		}
 
-		// 2️⃣ If HTML request, also check for Terms of Service link
+		// 4. Process request based on type
 		if (option.type === 'text') {
 			const response = await request.fetch(request.input, request.init);
 			const html = await response.text();
@@ -170,6 +174,7 @@ export async function httpRequest<T>(
 			result.value = parse.data;
 		}
 
+		// 5. Store successful response in cache
 		cacheService.set(
 			request.input.toString(),
 			typeof result.value === 'string' ? result.value : (result.value as object),

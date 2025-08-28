@@ -5,27 +5,28 @@ import { CacheService } from '$lib/services/cache-service.js';
 import type { HttpRequestType, HttpResponse } from '$lib/types/index.js';
 
 /**
- * Simple in-memory cache for HTTP responses
- * Replaces previous Map implementation with CacheService
- */
-const cacheService = new CacheService<string | object>();
-
-/**
- * Rate limiting configuration
+ * Rate limiting configuration - tracks timestamp of last request
  */
 let lastRequestTime = 0;
-const MIN_INTERVAL = 123; // ms between requests
 
 /**
- * Checks if a given URL is allowed to be crawled according to the site's robots.txt rules for a specified user agent.
+ * Checks if a given URL is allowed to be crawled according to the site's robots.txt rules.
+ * 
+ * This function fetches and parses the robots.txt file from the URL's origin to determine
+ * if the specified path is allowed to be crawled by the given user agent.
  *
- * Fetches the robots.txt file from the origin of the provided URL and parses its rules.
- * If robots.txt is not found or cannot be fetched, the function assumes crawling is allowed.
- * Only basic parsing is performed: it checks for matching `User-agent` and `Disallow` directives.
- *
- * @param url - The URL to check against the site's robots.txt rules.
- * @param userAgent - The user agent string to match in robots.txt. Defaults to '*'.
- * @returns A promise that resolves to `true` if crawling is allowed, or `false` if disallowed.
+ * @param url - The URL to check against robots.txt rules
+ * @param userAgent - User agent to check rules against (defaults to '*' which matches any agent)
+ * @returns Promise resolving to boolean - true if crawling is allowed, false if disallowed
+ * 
+ * @example
+ * ```
+ * // Check if a URL is allowed to be crawled
+ * const allowed = await isAllowedByRobots('https://example.com/path');
+ * if (allowed) {
+ *   // Proceed with crawling
+ * }
+ * ```
  */
 export async function isAllowedByRobots(url: string, userAgent = '*'): Promise<boolean> {
 	try {
@@ -57,12 +58,16 @@ export async function isAllowedByRobots(url: string, userAgent = '*'): Promise<b
 }
 
 /**
- * Searches the provided HTML for a hyperlink containing keywords related to terms and conditions,
- * such as "terms", "tos", or "conditions", and returns the absolute URL of the first match.
+ * Finds links to Terms of Service or similar legal documents in HTML content.
+ * 
+ * This helper function scans the provided HTML for links containing common terms-related 
+ * keywords and returns the absolute URL of the first matching link found.
  *
- * @param html - The HTML content to search for terms-related links.
- * @param baseUrl - The base URL to resolve relative links against.
- * @returns The absolute URL of the found terms link, or `null` if no such link is found.
+ * @param html - HTML content to scan for terms links
+ * @param baseUrl - Base URL used to resolve relative links to absolute URLs
+ * @returns Absolute URL to terms page if found, null otherwise
+ * 
+ * @internal Used by httpRequest to detect terms links in web pages
  */
 function findTermsUrl(html: string, baseUrl: string): string | null {
 	const $ = cheerio.load(html);
@@ -71,34 +76,53 @@ function findTermsUrl(html: string, baseUrl: string): string | null {
 }
 
 /**
- * Sends an HTTP request with caching, rate limiting, and optional robots.txt and Terms of Service checks.
+ * Sends an HTTP request with advanced features like caching, rate limiting, and compliance checks.
  *
- * @template T The expected type of the response value when `option.type` is `'json'`.
- * @param request The HTTP request configuration object containing:
- *  - `input`: The URL or resource to request
- *  - `init`: Optional fetch configuration options
- *  - `fetch`: The fetch implementation to use
- * @param option Configuration options:
- *  - `type`: Specifies the response format, either `'text'` (HTML/text) or `'json'`.
- *  - `checkRobots`: If `true`, checks robots.txt before making the request.
- * @returns A promise that resolves to an `HttpResponse` containing:
- *  - `status`: HTTP status code
- *  - `success`: Boolean indicating if the request succeeded
- *  - `message`: Response message or error information
- *  - `value`: Response data (type depends on the `option.type` setting)
+ * This function wraps the standard fetch API with additional functionality to make web requests more
+ * robust, ethical, and efficient. It supports both JSON and text/HTML responses with appropriate 
+ * processing for each type.
  *
- * @remarks
- * - Caches responses for 10 minutes to reduce redundant requests.
- * - Enforces a minimum interval between requests for rate limiting.
- * - If `checkRobots` is enabled, blocks requests disallowed by robots.txt.
- * - For HTML/text requests, warns if a Terms of Service link is detected in the response.
- * - Handles errors gracefully and returns a standardized error response.
+ * @template T Type of response data when requesting JSON content
+ * @param request Configuration object containing:
+ *  - `input`: URL or resource to request
+ *  - `init`: Optional fetch configuration (headers, method, etc.)
+ *  - `fetch`: Fetch implementation to use
+ * @param option Request options:
+ *  - `type`: Response format - 'text' for HTML/text or 'json' for JSON data
+ *  - `checkRobots`: Whether to respect robots.txt rules (true/false)
+ *  - `cache`: Cache duration in minutes (0 to disable caching)
+ *  - `rateLimit`: Minimum milliseconds between requests (optional)
+ * @returns Promise resolving to HttpResponse object with status, success flag, message, and response data
+ * 
+ * @example
+ * ```
+ * // Fetch HTML content with robots.txt check and 5-minute caching
+ * const response = await httpRequest(
+ *   { 
+ *     input: 'https://example.com',
+ *     fetch: fetch 
+ *   },
+ *   { 
+ *     type: 'text',
+ *     checkRobots: true,
+ *     cache: 5,
+ *     rateLimit: 1000 // 1 second between requests
+ *   }
+ * );
+ * 
+ * if (response.success) {
+ *   const html = response.value as string;
+ *   // Process HTML content
+ * }
+ * ```
  */
 export async function httpRequest<T>(
 	request: HttpRequestType,
 	option: {
 		type: 'text' | 'json';
 		checkRobots: boolean;
+		cache?: number;
+		rateLimit?: number
 	}
 ): Promise<HttpResponse<T | string>> {
 	let result: HttpResponse<T | string> = {
@@ -107,6 +131,11 @@ export async function httpRequest<T>(
 		message: '',
 		value: ''
 	};
+	/**
+	 * Simple in-memory cache for HTTP responses
+	 * Replaces previous Map implementation with CacheService
+	 */
+	const cacheService = new CacheService<string | object>(!option.cache ? 0 : option.cache);
 
 	try {
 		// 1. Check cache (10 minutes expiration)
@@ -123,8 +152,8 @@ export async function httpRequest<T>(
 		// 2. Apply rate limiting
 		const now = Date.now();
 		const timeSinceLast = now - lastRequestTime;
-		if (timeSinceLast < MIN_INTERVAL) {
-			await sleep(MIN_INTERVAL - timeSinceLast);
+		if (option.rateLimit && timeSinceLast < option.rateLimit) {
+			await sleep(option.rateLimit - timeSinceLast);
 		}
 		lastRequestTime = Date.now();
 

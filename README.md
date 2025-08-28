@@ -49,10 +49,79 @@ export const handle = sequence(protectedHooks.handle);
 
 ### HTTP Service
 
+A powerful HTTP client with caching, rate limiting, robots.txt compliance, and response processing.
+
 ```ts
 import { httpRequest } from '@kevinap29/sveltekit-lib/services';
 
-const { success, value, error } = await httpRequest({ fetch, input: 'https://api.example.com/data', options: { method: 'POST', body: JSON.stringify({ foo: 'bar' }) } }, { type: 'json', checkRobots: true });
+// Fetch JSON data with caching and rate limiting 
+const response = await httpRequest(
+	{ 
+		input: 'https://api.example.com/data', 
+		init: { 
+			method: 'POST', 
+			body: JSON.stringify({ foo: 'bar' }) 
+		}, 
+		fetch: fetch 
+	}, 
+	{ 
+		type: 'json', 
+		checkRobots: true, 
+		cache: 5, 
+		// 5 minute cache 
+		rateLimit: 1000 
+		// 1 second between requests 
+	});
+
+if (response.success) { 
+	const data = response.value; // Process JSON data 
+}
+
+// Fetch HTML content 
+const htmlResponse = await httpRequest(
+	{ 
+		input: 'https://example.com', 
+		fetch: fetch 
+	}, 
+	{ 
+		type: 'text', 
+		checkRobots: true 
+	});
+
+if (htmlResponse.success) { 
+	const html = htmlResponse.value as string; 
+	// Process HTML content 
+}
+```
+
+#### Features
+
+- **Type-safe responses** - Generic typing for JSON responses
+- **Response format detection** - Automatic handling of both JSON and HTML/text responses
+- **Caching** - Configurable in-memory response caching
+- **Rate limiting** - Prevent overloading servers with too many requests
+- **Robots.txt compliance** - Ethical web scraping with automatic robots.txt checking
+- **Terms of Service detection** - Warning when terms of service links are found
+- **Error handling** - Standardized error responses
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `type` | 'text' \| 'json' | (required) | Response format - 'text' for HTML/text or 'json' for JSON data |
+| `checkRobots` | boolean | (required) | Whether to respect robots.txt rules |
+| `cache` | number | undefined | Cache duration in minutes (0 to disable caching) |
+| `rateLimit` | number | undefined | Minimum milliseconds between requests |
+
+#### Response Structure
+
+```typescript
+interface HttpResponse<T> { 
+	status: number; // HTTP status code 
+	success: boolean; // Whether the request was successful 
+	message: string; // Status message or error details 
+	value: T; // Response data (typed as T for JSON or string for text) 
+}
 ```
 
 ### Cookies Service

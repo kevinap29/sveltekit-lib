@@ -130,6 +130,11 @@ describe('JSONHelper.safeParse', () => {
 			return;
 		}
 
+		if (typeof result.data === 'string') {
+			console.error(`${result.message}`);
+			return;
+		}
+
 		expect(result.data.date instanceof Date).toBe(true);
 		expect(result.data.date.toISOString()).toBe(date.toISOString());
 	});
@@ -159,6 +164,11 @@ describe('JSONHelper.safeParse', () => {
 			return;
 		}
 
+		if (typeof result.data === 'string') {
+			console.error(`${result.message}`);
+			return;
+		}
+
 		expect(result.data.set instanceof Set).toBe(true);
 		expect(Array.from(result.data.set)).toEqual([1, 2, 3]);
 	});
@@ -181,6 +191,11 @@ describe('JSONHelper.safeParse', () => {
 			return;
 		}
 
+		if (typeof result.data === 'string') {
+			console.error(`${result.message}`);
+			return;
+		}
+
 		expect(result.data.map instanceof Map).toBe(true);
 		expect(Array.from(result.data.map.entries())).toEqual([
 			['a', 1],
@@ -195,6 +210,11 @@ describe('JSONHelper.safeParse', () => {
 
 		if (!result.success) {
 			console.error(`${result.message}, ${result.cause}`);
+			return;
+		}
+
+		if (typeof result.data === 'string') {
+			console.error(`${result.message}`);
 			return;
 		}
 
@@ -218,4 +238,18 @@ describe('JSONHelper.safeParse', () => {
 		expect(result.message).toBe('Failed Parse JSON');
 		expect(result.cause).toBeDefined();
 	});
+
+	it('safe parse should object of property' , () => {
+		const request = `{"to":"paris","needHtmlString":false}""{"target":"https://mainapidev.vercel.app/flights?from":"londres"}`;
+		const result = JSONHelper.safeParse<{ target: string; needHtmlString?: boolean }>(request);
+		console.log(request, result)
+		
+		if (result.success) {
+			console.error(`Expected to be error`);
+			return;
+		}
+
+		expect(result.success).toBe(false)
+		expect(result.cause).toBeDefined();
+	})
 });

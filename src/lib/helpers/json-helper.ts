@@ -106,22 +106,25 @@ export class JSONHelper {
 		}
 	}
 
-	/**
+/**
 	 * Safely parses a JSON string and returns a typed result.
 	 *
 	 * Attempts to parse the provided JSON string using a universal reviver.
 	 * If parsing succeeds, returns an object containing the parsed data, a success flag, and a success message.
 	 * If parsing fails, returns an object containing the error message, a failure flag, and a failure message.
+	 * 
+	 * Note: If the input doesn't look like a JSON object, it will return the original string as data
+	 * with success=true but with a PARSE_FAILED message.
 	 *
 	 * @template T - The expected type of the parsed JSON data.
 	 * @param input - The JSON string to parse.
 	 * @returns An {@link IMethodResponse} containing either the parsed data or error information.
 	 */
-	public static safeParse<T>(input: string): IMethodResponse<T> {
+	public static safeParse<T>(input: string): IMethodResponse<T | string> {
 		try {
 			if (!this.looksLikeObject(input)) {
 				return {
-					data: input as T,
+					data: input as string,
 					success: true,
 					message: PARSE_FAILED
 				};

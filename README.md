@@ -67,7 +67,7 @@ const response = await httpRequest(
 	{ 
 		type: 'json', 
 		checkRobots: true, 
-		cache: 5, 
+		cache: 1000 * 60 * 5, 
 		// 5 minute cache 
 		rateLimit: 1000 
 		// 1 second between requests 
@@ -110,7 +110,7 @@ if (htmlResponse.success) {
 |--------|------|---------|-------------|
 | `type` | 'text' \| 'json' | (required) | Response format - 'text' for HTML/text or 'json' for JSON data |
 | `checkRobots` | boolean | (required) | Whether to respect robots.txt rules |
-| `cache` | number | undefined | Cache duration in minutes (0 to disable caching) |
+| `cache` | number | undefined | Cache duration in millisecond (0 to disable caching) |
 | `rateLimit` | number | undefined | Minimum milliseconds between requests |
 
 #### Response Structure
@@ -249,11 +249,13 @@ A flexible in-memory caching solution with automatic expiration.
 - Automatic cache expiration
 - Memory-efficient storage
 - Simple API for cache management
+- Configurable cache duration
 
 #### Methods
 
 | Method  | Description                                          | Example                                        |
 |---------|------------------------------------------------------|------------------------------------------------|
+| `init`  | Initialize cache with expiration time                | `cache.init(1000 * 60 * 5)` // 5 minute cache  |
 | `get`   | Retrieves cached data (returns null if expired)       | `cache.get('user-123')`                        |
 | `set`   | Stores data with optional message                     | `cache.set('user-123', userData, 'User cache')` |
 | `delete`| Removes specific cache entry                          | `cache.delete('user-123')`                      |
@@ -264,11 +266,14 @@ A flexible in-memory caching solution with automatic expiration.
 ```ts
 import { CacheService } from '@kevinap29/sveltekit-lib/services';
 
-// Define your data type 
-interface UserData { id: string; name: string; email: string; }
+// Define your data 
+type interface UserData { id: string; name: string; email: string; }
 
-// Initialize cache with 5 minutes TTL 
-const userCache = new CacheService<UserData>(5 * 60 * 1000);
+// Initialize cache service 
+const userCache = new CacheService<UserData>();
+
+// Set cache duration (5 minutes) 
+userCache.init(5 * 60 * 1000);
 
 // Cache user data 
 userCache.set('user-123', { id: '123', name: 'John Doe', email: 'john@example.com' });
@@ -277,7 +282,7 @@ userCache.set('user-123', { id: '123', name: 'John Doe', email: 'john@example.co
 const cachedUser = userCache.get('user-123'); 
 if (cachedUser) { 
 	console.log('Cached user:', cachedUser.data); 
-	console.log('Cache timestamp:', new Date(cachedUser.timestamp));
+	console.log('Cache timestamp:', new Date(cachedUser.timestamp)); 
 	console.log('Cache message:', cachedUser.message); 
 }
 

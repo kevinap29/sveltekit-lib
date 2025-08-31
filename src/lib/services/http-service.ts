@@ -5,6 +5,12 @@ import { CacheService } from '$lib/services/cache-service.js';
 import type { HttpRequestType, HttpResponse } from '$lib/types/index.js';
 
 /**
+ * Simple in-memory cache for HTTP responses
+ * Replaces previous Map implementation with CacheService
+ */
+const cacheService = new CacheService<string | object>();
+
+/**
  * Rate limiting configuration - tracks timestamp of last request
  */
 let lastRequestTime = 0;
@@ -90,7 +96,7 @@ function findTermsUrl(html: string, baseUrl: string): string | null {
  * @param option Request options:
  *  - `type`: Response format - 'text' for HTML/text or 'json' for JSON data
  *  - `checkRobots`: Whether to respect robots.txt rules (true/false)
- *  - `cache`: Cache duration in minutes (0 to disable caching)
+ *  - `cache`: Cache duration in milliseconds (0 to disable caching)
  *  - `rateLimit`: Minimum milliseconds between requests (optional)
  * @returns Promise resolving to HttpResponse object with status, success flag, message, and response data
  * 
@@ -105,7 +111,7 @@ function findTermsUrl(html: string, baseUrl: string): string | null {
  *   { 
  *     type: 'text',
  *     checkRobots: true,
- *     cache: 5,
+ *     cache: 1000 * 60, // 1 minute cache
  *     rateLimit: 1000 // 1 second between requests
  *   }
  * );
@@ -131,16 +137,13 @@ export async function httpRequest<T>(
 		message: '',
 		value: ''
 	};
-	/**
-	 * Simple in-memory cache for HTTP responses
-	 * Replaces previous Map implementation with CacheService
-	 */
-	const cacheService = new CacheService<string | object>(!option.cache ? 0 : option.cache);
 
 	try {
-		// 1. Check cache (10 minutes expiration)
-		const cached = cacheService.get(request.input.toString());
-		if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
+		// 1. Check cache
+		cacheService.init(option.cache)
+
+		const cached = cacheService.get(`url-${request.input.toString()}`);
+		if (cached && (Date.now() - cached.timestamp < (option.cache ?? 0))) {
 			result.status = 200;
 			result.success = true;
 			result.message = 'OK';
@@ -205,7 +208,7 @@ export async function httpRequest<T>(
 
 		// 5. Store successful response in cache
 		cacheService.set(
-			request.input.toString(),
+			`url-${request.input.toString()}`,
 			typeof result.value === 'string' ? result.value : (result.value as object),
 			result.message
 		);

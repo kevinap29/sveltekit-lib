@@ -6,12 +6,14 @@ type CacheType<T> = {
 
 export class CacheService<T> {
 	private memory: Map<string, CacheType<T>>;
-	private maxAge: number;
+	private maxAge: number = 0;
 
-	public constructor(maxAge: number = 10 * 60 * 1000) {
-		// default 10 minutes
-		this.maxAge = maxAge;
+	public constructor() {
 		this.memory = new Map();
+	}
+
+	public init(maxAge: number = 10 * 60 * 1000) {
+		this.maxAge = maxAge;
 	}
 
 	public get(key: string) {

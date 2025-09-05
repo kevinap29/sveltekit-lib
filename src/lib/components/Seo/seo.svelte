@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SeoProps } from './types.js';
 
-	let { data }: { data: SeoProps } = $props();
+	let { data = $bindable() }: { data: SeoProps } = $props();
 	const { title, description, keywords, author, image, url, type = 'website' } = data;
 </script>
 

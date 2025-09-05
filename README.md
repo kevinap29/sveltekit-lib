@@ -222,17 +222,18 @@ The SEO component automatically generates:
 <script lang="ts"> 
 	import { Seo } from '@kevinap29/sveltekit-lib/components'; 
 
-	const pageData = { 
+	const pageData = $state({ 
 		title: "My Blog Post", 
 		description: "An interesting article about SvelteKit development",
 		 keywords: ["sveltekit", "development", "tutorial"], 
 		 author: "John Doe", 
 		 image: "https://mysite.com/blog-preview.jpg", 
 		 url: "https://mysite.com/blog/post-1", 
-		 type: "article" }; 
+		 type: "article" 
+	}); 
 </script> 
 
-<Seo data={pageData} /> 
+<Seo bind:data={pageData} /> 
 
 <h1>My Blog Post</h1> 
 

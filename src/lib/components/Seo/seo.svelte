@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { SeoProps } from './types.js';
 
-	let { data = $bindable() }: { data: SeoProps } = $props();
-	const { title, description, keywords, author, image, url, type = 'website' } = data;
+	let { data }: { data: SeoProps } = $props();
+	const { title, description, keywords, author, image, url, type = 'website' } = $derived(data);
 </script>
 
 <svelte:head>

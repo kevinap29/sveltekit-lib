@@ -233,7 +233,7 @@ The SEO component automatically generates:
 	}); 
 </script> 
 
-<Seo bind:data={pageData} /> 
+<Seo data={pageData} /> 
 
 <h1>My Blog Post</h1> 
 
